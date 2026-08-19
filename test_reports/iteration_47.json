@@ -1,0 +1,32 @@
+{
+  "summary": "Iteration 47 verifies the pending-models workflow, per-key rate-limit tracking (key_status), and news_watcher.deep_on_news toggle end-to-end. All 7 backend pytest cases pass (login, catalog>=20 pending & empty discovered, approve->401 without token, unknown model->400, approve+dismiss+catalog verify, roles toggle). Frontend flow verified via Playwright: Admin login via lock icon -> KI-Trader strategy tab -> gear (edit params) opens AITradingPanel -> ai-team-toggle -> ai-pending-models visible with 31 approve/dismiss buttons; clicking approve removes the row, shows Sonner toast 'gemini · gemini-3.1-flash-lite-preview freigeschaltet – jetzt auswählbar'; ai-role-news-deepanalysis toggles true<->false with persistence and no errors.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "AITradingPanel News-Wächter card", "issue": "Two DOM inputs share the same data-testid='ai-role-news-deepanalysis' (lines ~1907 and ~1913 in AITradingPanel.js). Both toggle 'Tiefenanalyse bei News'; functionality works, but duplicate testids can break single-selector tests. Consider suffixing (e.g. -a/-b) or removing the duplicate render.", "selector": "[data-testid=ai-role-news-deepanalysis]", "priority": "LOW"}
+    ],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iter47_pending_models_and_keystatus.py",
+    "/app/test_reports/pytest/iter47_results.xml"
+  ],
+  "action_items": [
+    "Optional: deduplicate the two ai-role-news-deepanalysis inputs in AITradingPanel.js News-Wächter card (rendered twice)."
+  ],
+  "critical_code_review_comments": [
+    "AITradingPanel.js is >2100 lines – exceeds the 700-line guideline; consider extracting KI-Team, KI-Labor and Pending-Models sub-panels into their own modules for maintainability.",
+    "Pre-existing React hydration warning ('<span> cannot be a child of <option>') appears in console on panel open; not caused by this iteration but should be cleaned up (option children must be plain text).",
+    "routers/ai.py::/api/ai/models/approve error message 'Modell nicht in den entdeckten Modellen' correctly returns 400 for unknown model; good UX."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iter47_pending_models_and_keystatus.py"
+  ],
+  "success_rate": {"backend": "100% (7/7 pytest)", "frontend": "100% (all flows)"},
+  "test_credentials": "Admin / Dean06Greif!/Admin (from /app/memory/test_credentials.md)",
+  "seed_data_creation": "None. Test approved gemini-3.1-flash-lite-preview via UI + gemini-2.5-flash via curl; both dismissed at end so discovered is back to [].",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Backend endpoints verified live: POST /api/auth/login (Admin/Dean06Greif!/Admin) -> token; GET /api/ai/models/catalog -> pending (33-35 items depending on state) + discovered ([]); POST /api/ai/models/approve requires admin token (401 without, 400 for unknown model); POST /api/ai/models/dismiss ok; GET /api/ai/status -> providers_health.key_status.cerebras.total=14, gemini=1, groq=2, mistral=2, openrouter=5; POST /api/ai/roles with {news_watcher:{deep_on_news:false|true}} persists. Frontend requires: login via [data-testid=admin-lock-button] -> [data-testid=admin-login-modal] -> username/password/submit; then [data-testid=strategy-tab-ai_trader] AND [data-testid=edit-strategy-params-btn] (gear) to open AITradingPanel; then [data-testid=ai-team-toggle] to reveal [data-testid=ai-pending-models] and role cards. Sonner toasts (data-sonner-toast) confirm approve. Duplicate testid on ai-role-news-deepanalysis is cosmetic only. NO LLM analysis was triggered. LLM/Bitunix keys are LIVE – do NOT call POST /api/ai/analyze or /api/ai/deep-analyze in future runs unless explicitly requested."
+}
